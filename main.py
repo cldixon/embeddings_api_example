@@ -148,7 +148,7 @@ def get_embeddings(model: SentenceTransformer, text: str | List[str]) -> List[Em
 
 ## -- Initialize Models and Metadata ----
 
-# TODO: a dedicated class for handling multiple models
+# TODO: a dedicated class for handling multiple models; strategies for models from different libraries, etc.
 # TODO: use caching to effectively manage model in memory, when called, etc.
 model_map = {
     checkpoint: load_model_from_checkpoint(
@@ -158,7 +158,7 @@ model_map = {
     for checkpoint in settings.SPECIFIED_MODELS
 }
 
-# TODO: this could be re-implemented as something more than a dictionary.
+# TODO: this could be re-factored into dedicated class.
 # TODO: additional metadata could include last trained date, metrics, etc.
 model_metadata = {
     checkpoint: {"dim": model.get_sentence_embedding_dimension()}
@@ -170,7 +170,7 @@ model_metadata = {
 
 @app.get("/")
 def read_root():
-    return {"greeting": "Hello, you've reached an incredibly generic text embeddings API!"}
+    return {"greeting": "Hello, you've reached a very generic text embeddings API!"}
 
 ## ---- get available models ------
 @app.get("/models", response_model_exclude_none=True)
