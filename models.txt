@@ -1,0 +1,2 @@
+all-mpnet-base-v2
+all-MiniLM-L12-v2

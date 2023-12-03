@@ -1,0 +1,7 @@
+fastapi
+pydantic
+pydantic-settings
+requests
+sentence-transformers
+torch
+uvicorn
