@@ -22,7 +22,7 @@ class DeviceOptions:
     CUDA = "cuda"
     MPS = "mps"
     
-def get_device() -> str:
+def _get_device() -> str:
     """Returns best available device for torch inference."""
     if torch.cuda.is_available():
         return DeviceOptions.CUDA
@@ -50,7 +50,7 @@ def load_specified_models(filepath: str = SPECIFIED_MODELS_FILE) -> Tuple[str]:
 # TODO: device checking mechanism ties example to pytorch. FYI.
 class APISettings(BaseSettings):
     MODEL_DIR: str = Field(default=ARTIFACTS_DIR) # <- we'll want models saved locally before serving. See `download.py`...
-    DEVICE: str = Field(default_factory=get_device)
+    DEVICE: str = Field(default_factory=_get_device)
     SPECIFIED_MODELS: Tuple = Field(default_factory=load_specified_models) # <- these could be your local, custom models
 
 
@@ -151,7 +151,10 @@ def get_embeddings(model: SentenceTransformer, text: str | List[str]) -> List[Em
 # TODO: a dedicated class for handling multiple models
 # TODO: use caching to effectively manage model in memory, when called, etc.
 model_map = {
-    checkpoint: load_model_from_checkpoint(os.path.join(settings.MODEL_DIR, checkpoint))
+    checkpoint: load_model_from_checkpoint(
+        checkpoint=os.path.join(settings.MODEL_DIR, checkpoint),
+        device=settings.DEVICE
+    )
     for checkpoint in settings.SPECIFIED_MODELS
 }
 
