@@ -2,8 +2,10 @@ import os
 from uuid import uuid4 
 from datetime import datetime
 
-from typing_extensions import Annotated
+from fastapi import FastAPI
+
 from typing import Any, List, Tuple 
+from typing_extensions import Annotated
 
 from pydantic_settings import BaseSettings
 from pydantic import BaseModel, Field, AfterValidator
@@ -11,13 +13,10 @@ from pydantic import BaseModel, Field, AfterValidator
 import torch 
 from sentence_transformers import SentenceTransformer
 
-from fastapi import FastAPI
-
 
 ## -- App Settings ----
 
 ## ---- Torch Device Options ------
-
 class DeviceOptions:
     CPU = "cpu"
     CUDA = "cuda"
@@ -48,7 +47,7 @@ def load_specified_models(filepath: str = SPECIFIED_MODELS_FILE) -> Tuple[str]:
 
 
 # TODO: model directory/loading can be refactored as an interface (e.g., models stored in blob storage, repo service, etc.)
-# TODO: default function to check if cuda available, else cpu or mps.
+# TODO: device checking mechanism ties example to pytorch. FYI.
 class APISettings(BaseSettings):
     MODEL_DIR: str = Field(default=ARTIFACTS_DIR) # <- we'll want models saved locally before serving. See `download.py`...
     DEVICE: str = Field(default_factory=get_device)
@@ -156,7 +155,7 @@ model_map = {
     for checkpoint in settings.SPECIFIED_MODELS
 }
 
-# TODO: this could be re-implemented as something more powerful than a dictionary.
+# TODO: this could be re-implemented as something more than a dictionary.
 # TODO: additional metadata could include last trained date, metrics, etc.
 model_metadata = {
     checkpoint: {"dim": model.get_sentence_embedding_dimension()}
@@ -168,7 +167,7 @@ model_metadata = {
 
 @app.get("/")
 def read_root():
-    return {"greeting": "Hello, you've reached a very generic text embeddings API!"}
+    return {"greeting": "Hello, you've reached an incredibly generic text embeddings API!"}
 
 ## ---- get available models ------
 @app.get("/models", response_model_exclude_none=True)
