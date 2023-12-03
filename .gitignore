@@ -4,3 +4,5 @@ __pycache__
 # include artifacts dir with only README
 artifacts/*
 !artifacts/README.md
+
+test.py
