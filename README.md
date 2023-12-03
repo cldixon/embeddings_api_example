@@ -133,6 +133,72 @@ $ curl -X 'POST' \
     "model": "all-mpnet-base-v2"
 ```
 
+#### Multiple Embeddings
+
+The API can accept a list of input text sequences, and the response output will not be changed. The embeddings are returned as a list either way.
+
+```python
+import requests 
+
+checkpoint = "all-mpnet-base-v2"
+text = [
+    "Can we mimic the Embeddings API output format from OpenAI?",
+    "I dunno, but we can try."
+]
+
+response = requests.post(
+    url="http://localhost:8000/embeddings",
+    json={"model": checkpoint, "input": text},
+    headers=headers
+)
+
+if response.status_code == 200:
+    content = response.json()
+    print(f"** returned {len(content['data'])} embeddings...")
+
+>>> ** returned 2 embeddings...
+```
+
+#### Invalid Model Selection
+
+In the current implementation, the model returns an error if an invalid (i.e., _unspecified_, _unavailable_) model is selected in the request.
+
+```python
+import json
+import requests 
+from pprint import pprint 
+
+model = "i-ll-take-the-finest-model-you-ve-got!"
+text = "..."
+
+response = requests.post(
+    url=embeddings_url,
+    json={"model": model, "input": text},
+    headers=headers
+)
+
+error_msg = json.loads(response.content)
+pprint(error_msg)
+```
+
+##### Response
+
+```json
+{
+    "detail": [
+        {
+            "ctx": {"error": {}},
+            "input": "the-finest-model-youve-got!",
+            "loc": ["body", "model"],
+            "msg": "Assertion failed, Model `i-ll-take-the-finest-model-you-ve-got!` has \
+                    not been specified and is not available.",
+            "type": "assertion_error",
+            "url": "https://errors.pydantic.dev/2.5/v/assertion_error"
+        }
+    ]
+}
+```
+
 
 ### `TODO's` as Next Steps
 
