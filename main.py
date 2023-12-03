@@ -1,18 +1,58 @@
 import os 
-import torch 
 from uuid import uuid4 
-from fastapi import FastAPI
 from datetime import datetime
-from pydantic import BaseModel, Field 
+
+from typing_extensions import Annotated
+from typing import Any, List, Tuple 
+
 from pydantic_settings import BaseSettings
-from typing import Any, List, Literal, Optional, Tuple 
+from pydantic import BaseModel, Field, AfterValidator
+
+import torch 
 from sentence_transformers import SentenceTransformer
-# test
+
+from fastapi import FastAPI
+
+
 ## -- App Settings ----
+
+## ---- Torch Device Options ------
+
+class DeviceOptions:
+    CPU = "cpu"
+    CUDA = "cuda"
+    MPS = "mps"
+    
+def get_device() -> str:
+    """Returns best available device for torch inference."""
+    if torch.cuda.is_available():
+        return DeviceOptions.CUDA
+    elif torch.backends.mps.is_available():
+        return DeviceOptions.MPS
+    else:
+        return DeviceOptions.CPU
+    
+## ---- Specified Models ------
+# ISSUE: this reads from models.txt, but then loads from artifacts/.
+# the two could be out of sync. See `download.py`.
+
+ARTIFACTS_DIR = "artifacts"
+SPECIFIED_MODELS_FILE = "models.txt"
+
+def load_specified_models(filepath: str = SPECIFIED_MODELS_FILE) -> Tuple[str]:
+    """Returns tuple of specified models which API can support for inference."""
+    with open(filepath, "r") as in_file:
+        specified_models = in_file.read().split()
+        in_file.close()
+    return tuple(specified_models)
+
+
+# TODO: model directory/loading can be refactored as an interface (e.g., models stored in blob storage, repo service, etc.)
+# TODO: default function to check if cuda available, else cpu or mps.
 class APISettings(BaseSettings):
-    MODEL_DIR: str = "artifacts" # <- we'll want models saved locally before serving. See `download.py`...
-    DEVICE: Literal["cpu", "device", "mps"] = "cpu"
-    AVAILABLE_CHECKPOINTS: Tuple = ("all-mpnet-base-v2", "all-MiniLM-L12-v2") # <- these could be your local, custom models
+    MODEL_DIR: str = Field(default=ARTIFACTS_DIR) # <- we'll want models saved locally before serving. See `download.py`...
+    DEVICE: str = Field(default_factory=get_device)
+    SPECIFIED_MODELS: Tuple = Field(default_factory=load_specified_models) # <- these could be your local, custom models
 
 
 ## -- Initialize API + Settings ----
@@ -21,16 +61,25 @@ settings = APISettings()
 
 
 #### -- API Class Models ----
+
+# TODO: application specific uuid generation
 def generate_id() -> str:
     """Generate UUID string"""
     return str(uuid4())
 
+# TODO: application specific date/timestamp
 def get_timestamp() -> str:
     """Example datetime as string"""
     return datetime.today().strftime("%Y-%m-%d @ %H:%M:%S")
 
 
-AvailableModels = Literal["all-mpnet-base-v2", "all-MiniLM-L12-v2"]
+def _check_if_model_is_specified(model: str) -> str:
+    """Check if input model is specified as a model to be available.
+    Returns error if not, model name if specified."""
+    assert model in settings.SPECIFIED_MODELS, f"Model `{model}` has not been specified and is not available."
+    return model
+
+AvailableModels = Annotated[str, AfterValidator(_check_if_model_is_specified)]
 Generated: str = Field(default_factory=get_timestamp)
 UUID: str = Field(default_factory=generate_id)
 
@@ -62,11 +111,13 @@ class APIOutput(BaseModel):
 
 ## -- Embedding Model Functions ----
 
+# TODO: currently tied to sentence-transformers library; could re-factor to allow for other libraries, pure pytorch, etc.
 def load_model_from_checkpoint(checkpoint: str, device: str | None = None) -> SentenceTransformer:
     """Loads sentence-transformer model from checkpoint. Can be from library's pretrained models
     or local custom models. Also optional provide device if using GPU or Apple Silicon."""
     return SentenceTransformer(checkpoint, device)
 
+# TODO: more sophisticated tokenization options, beyond truncation; support chunking, windows sizes, etc.
 def get_embeddings(model: SentenceTransformer, text: str | List[str]) -> List[Embedding]:
     """Returns sentence embedding objects fro input text. Output will be a list even
     if input is a single (i.e., unwrapped) text sequence."""
@@ -97,9 +148,12 @@ def get_embeddings(model: SentenceTransformer, text: str | List[str]) -> List[Em
 
 
 ## -- Initialize Models and Metadata ----
+
+# TODO: a dedicated class for handling multiple models
+# TODO: use caching to effectively manage model in memory, when called, etc.
 model_map = {
     checkpoint: load_model_from_checkpoint(os.path.join(settings.MODEL_DIR, checkpoint))
-    for checkpoint in settings.AVAILABLE_CHECKPOINTS
+    for checkpoint in settings.SPECIFIED_MODELS
 }
 
 # TODO: this could be re-implemented as something more powerful than a dictionary.
@@ -124,6 +178,7 @@ def available_models() -> APIOutput:
     )
 
 ## ---- get text embeddings ------
+# TODO: would need to account for auth, limits, etc.
 @app.post("/embeddings", response_model_exclude_none=True)
 def model_inference(user_input: UserInput) -> APIOutput:
     user_input = user_input.model_dump()

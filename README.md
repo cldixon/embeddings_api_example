@@ -57,7 +57,7 @@ $ curl -X 'GET' \
     "data": {
         "models": {
             "all-MiniLM-L12-v2": {"dim": 384},
-            "all-mpnet-base-v2": {"dim": 768}.
+            "all-mpnet-base-v2": {"dim": 768},
             ...
         }
     },
@@ -68,9 +68,9 @@ $ curl -X 'GET' \
 
 #### Text Embeddings
 
-The core feature of the API is to generated and return embedding representations of input text sequences. The example below is for a single text sequence, but the API can handle an array of text sequences as input. The input requires the user to select an available model (see above section). See the included `demo.ipynb` notebook for more usage examples.
+The core feature of the API is to generate and return embedding representations of input text sequences. The example below is for a single text sequence, but the API can handle an array of text sequences as input. The input requires the user to select an available model (see above section). The included `demo.ipynb` notebook contains more usage examples.
 
-The API example provides (4) fields of data in the response:
+The API provides (4) fields of data in the response:
 
 1. `model`: name of the selected model in the request
 2. `generated`: generic date/time stamp
@@ -79,7 +79,7 @@ The API example provides (4) fields of data in the response:
 
 For each embedding returned, there are (3) fields of data:
 
-1. `embedding`: vector representation of input text sequence (i.e., `typing.List[float]`)
+1. `embedding`: vector representation of input text sequence
 2. `index`: index number for embedding; relevant if multiple text sequences provided as input
 3. `num_tokens`: number of tokens derived from the input text sequence. 
 
