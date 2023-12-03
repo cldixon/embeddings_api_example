@@ -57,8 +57,7 @@ $ curl -X 'GET' \
     "data": {
         "models": {
             "all-MiniLM-L12-v2": {"dim": 384},
-            "all-mpnet-base-v2": {"dim": 768},
-            ...
+            "all-mpnet-base-v2": {"dim": 768}
         }
     },
     "generated": "2023-12-02 @ 20:39:22",
@@ -68,7 +67,7 @@ $ curl -X 'GET' \
 
 #### Text Embeddings
 
-The core feature of the API is to generate and return embedding representations of input text sequences. The example below is for a single text sequence, but the API can handle an array of text sequences as input. The input requires the user to select an available model (see above section). The included `demo.ipynb` notebook contains more usage examples.
+The core feature of the API is to generate and return embedding representations of input text sequences. The example below is for a single text sequence, but the API can handle an array of text sequences as input. The input requires the user to select an available model (see above section). 
 
 The API provides (4) fields of data in the response:
 
@@ -190,8 +189,7 @@ pprint(error_msg)
             "ctx": {"error": {}},
             "input": "the-finest-model-youve-got!",
             "loc": ["body", "model"],
-            "msg": "Assertion failed, Model `i-ll-take-the-finest-model-you-ve-got!` has \
-                    not been specified and is not available.",
+            "msg": "Assertion failed, Model `i-ll-take-the-finest-model-you-ve-got!` has not been specified and is not available.",
             "type": "assertion_error",
             "url": "https://errors.pydantic.dev/2.5/v/assertion_error"
         }
